@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Recovery Badges — Build Healthy Habits</title>
+  <style>
+    :root{--bg:#0f172a;--card:#0b1220;--accent:#7c3aed;--muted:#94a3b8;--glass:rgba(255,255,255,0.03)}
+    *{box-sizing:border-box;font-family:Inter,system-ui,Arial;margin:0}
+    body{background:linear-gradient(180deg,#07102a 0%, #071226 60%);color:#e6eef8;min-height:100vh;padding:32px;display:flex;align-items:center;justify-content:center}
+    .wrap{width:980px;max-width:96%;display:grid;grid-template-columns:360px 1fr;gap:20px}
+    .card{background:linear-gradient(180deg,var(--card), #07112a);padding:18px;border-radius:14px;box-shadow:0 6px 30px rgba(2,6,23,0.6);border:1px solid rgba(255,255,255,0.03)}
+    h1{font-size:20px;margin-bottom:6px}
+    p.lead{color:var(--muted);font-size:13px}
+    .stat{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    .stat .tile{background:var(--glass);padding:10px 12px;border-radius:10px;min-width:120px}
+    .stat .num{font-weight:700;font-size:20px}
+    .actions{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+    button{background:linear-gradient(90deg,var(--accent),#4f46e5);color:white;border:none;padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:600}
+    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);font-weight:600}
+    .badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .badge{padding:8px 10px;border-radius:10px;background:rgba(255,255,255,0.02);min-width:120px;text-align:center}
+    .badge.claimed{opacity:0.45}
+    .badge .name{font-weight:700}
+    .tips{margin-top:12px;color:var(--muted);font-size:13px}
+    .right{display:flex;flex-direction:column;gap:12px}
+    .journal{min-height:160px;padding:12px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent)}
+    textarea{width:100%;min-height:90px;border-radius:8px;padding:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+    .history{max-height:220px;overflow:auto;padding:8px;border-radius:8px;background:rgba(255,255,255,0.015)}
+    .row{display:flex;gap:8px;align-items:center}
+    footer{color:var(--muted);font-size:12px;margin-top:6px}
+    .pill{background:rgba(255,255,255,0.03);padding:6px 8px;border-radius:999px;font-weight:700}
+    @media (max-width:900px){.wrap{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Recovery Badges</h1>
+      <p class="lead">Track visits, record clean days, claim milestone badges, and store everything locally in your browser. Private — data never leaves your device.</p>
+
+      <div class="stat" id="stats">
+        <div class="tile">
+          <div class="num" id="visits">0</div>
+          <div class="muted">Total visits</div>
+        </div>
+        <div class="tile">
+          <div class="num" id="cleanDays">0</div>
+          <div class="muted">Consecutive clean days</div>
+        </div>
+        <div class="tile">
+          <div class="num" id="relapses">0</div>
+          <div class="muted">Relapses recorded</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="cleanToday">I stayed clean today</button>
+        <button id="relapse" class="ghost">I had a relapse</button>
+        <button id="claim" class="ghost">Claim available badge</button>
+        <button id="reset" class="ghost">Reset all data</button>
+      </div>
+
+      <div class="badges" id="badgeList" aria-live="polite"></div>
+
+      <div class="tips">
+        <div><strong>Tip:</strong> Try to press <em>"I stayed clean today"</em> once per calendar day to build your streak. If you relapse, press <em>"I had a relapse"</em> — tracking helps identify patterns.</div>
+      </div>
+
+      <footer>
+        This tool stores data only in your browser's <code>localStorage</code>. If you clear browser data, progress will be lost. Not a replacement for professional help — if you feel out of control, consider reaching out to a healthcare provider.
+      </footer>
+    </div>
+
+    <div class="right">
+      <div class="card journal">
+        <div class="row"><div style="flex:1"><strong>Quick Journal</strong><div class="muted" style="font-size:12px">Write a short note about today — what triggered you, what helped.</div></div></div>
+        <textarea id="note" placeholder="I felt urge in the evening but went for a walk..." ></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px"><button id="saveNote">Save note</button><button id="clearNotes" class="ghost">Clear notes</button></div>
+        <div class="history" id="notesArea"></div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-bottom:6px">Addiction Recovery Resources</h3>
+        <p class="lead">If you need extra help, consider:</p>
+        <ul style="color:var(--muted);font-size:14px;margin-top:6px">
+          <li>Talking to a trusted friend or family member</li>
+          <li>Finding a therapist or counsellor (search for "sex addiction therapist" in your area)</li>
+          <li>Using blocking tools for adult sites and triggers</li>
+          <li>Replacing urges with healthy routines: exercise, cold showers, journaling</li>
+        </ul>
+        <div style="margin-top:8px" class="row"><div class="pill">Private</div><div style="flex:1"></div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Keys in localStorage
+    const STORAGE_KEYS = {
+      visits: 'recover_visits',
+      cleanDays: 'recover_clean_days',
+      lastCleanDate: 'recover_last_clean_date',
+      relapses: 'recover_relapses',
+      notes: 'recover_notes',
+      claimed: 'recover_claimed_badges'
+    };
+
+    // Badge thresholds (consecutive clean days)
+    const BADGES = [
+      {id:'bronze', name:'Bronze', days:1, emoji:'🥉'},
+      {id:'silver', name:'Silver', days:7, emoji:'🥈'},
+      {id:'gold', name:'Gold', days:30, emoji:'🥇'},
+      {id:'platinum', name:'Platinum', days:90, emoji:'💠'},
+      {id:'diamond', name:'Diamond', days:180, emoji:'💎'}
+    ];
+
+    // helpers
+    const $ = id => document.getElementById(id);
+    const todayISO = () => new Date().toISOString().split('T')[0];
+
+    function read(key, fallback=0){
+      const v = localStorage.getItem(key);
+      if(v===null) return fallback;
+      try{return JSON.parse(v);}catch(e){return v}
+    }
+    function write(key, val){localStorage.setItem(key, JSON.stringify(val));}
+
+    function init(){
+      // increment visits on load
+      const visits = read(STORAGE_KEYS.visits, 0) + 1;
+      write(STORAGE_KEYS.visits, visits);
+
+      // ensure other keys exist
+      if(localStorage.getItem(STORAGE_KEYS.cleanDays)===null) write(STORAGE_KEYS.cleanDays, 0);
+      if(localStorage.getItem(STORAGE_KEYS.relapses)===null) write(STORAGE_KEYS.relapses, 0);
+      if(localStorage.getItem(STORAGE_KEYS.claimed)===null) write(STORAGE_KEYS.claimed, []);
+      if(localStorage.getItem(STORAGE_KEYS.notes)===null) write(STORAGE_KEYS.notes, []);
+
+      render();
+
+      // Bind
+      $('cleanToday').addEventListener('click', markCleanToday);
+      $('relapse').addEventListener('click', markRelapse);
+      $('reset').addEventListener('click', resetData);
+      $('saveNote').addEventListener('click', saveNote);
+      $('clearNotes').addEventListener('click', clearNotes);
+      $('claim').addEventListener('click', claimBadge);
+    }
+
+    function render(){
+      const visits = read(STORAGE_KEYS.visits,0);
+      const cleanDays = read(STORAGE_KEYS.cleanDays,0);
+      const relapses = read(STORAGE_KEYS.relapses,0);
+      const claimed = read(STORAGE_KEYS.claimed,[]);
+      $('visits').textContent = visits;
+      $('cleanDays').textContent = cleanDays;
+      $('relapses').textContent = relapses;
+
+      // badges
+      const list = $('badgeList'); list.innerHTML='';
+      BADGES.forEach(b=>{
+        const el = document.createElement('div'); el.className='badge'+(claimed.includes(b.id)?' claimed':'');
+        el.innerHTML = `<div style="font-size:18px">${b.emoji}</div><div class="name">${b.name}</div><div style="font-size:12px;color:var(--muted)">Requires ${b.days} day(s)</div>`;
+        list.appendChild(el);
+      });
+
+      // notes
+      const notes = read(STORAGE_KEYS.notes,[]);
+      const notesArea = $('notesArea'); notesArea.innerHTML='';
+      if(notes.length===0) notesArea.innerHTML='<div style="color:var(--muted);padding:6px">No notes yet.</div>';
+      notes.slice().reverse().forEach(n=>{
+        const d = document.createElement('div'); d.style.padding='8px 6px'; d.style.borderBottom='1px dashed rgba(255,255,255,0.02)';
+        d.innerHTML = `<div style="font-size:12px;color:var(--muted)">${n.date}</div><div style="margin-top:4px">${escapeHtml(n.text)}</div>`;
+        notesArea.appendChild(d);
+      });
+
+      // claim button enabled if available
+      const available = getAvailableBadges(cleanDays).length>0;
+      $('claim').disabled = !available;
+      $('claim').className = available ? '' : 'ghost';
+    }
+
+    function getAvailableBadges(cleanDays){
+      const claimed = read(STORAGE_KEYS.claimed,[]);
+      return BADGES.filter(b=>cleanDays>=b.days && !claimed.includes(b.id));
+    }
+
+    function markCleanToday(){
+      const last = read(STORAGE_KEYS.lastCleanDate, null);
+      if(last === todayISO()){
+        alert('You already marked a clean day for today. Well done!');
+        return;
+      }
+      // if last clean date was yesterday, increment streak, else if earlier, start from 1
+      const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1); const yISO = yesterday.toISOString().split('T')[0];
+      let cleanDays = read(STORAGE_KEYS.cleanDays,0);
+      if(last === yISO) cleanDays = cleanDays + 1; else cleanDays = 1;
+      write(STORAGE_KEYS.cleanDays, cleanDays);
+      write(STORAGE_KEYS.lastCleanDate, todayISO());
+      render();
+      showTemporaryMessage(`Nice — streak is now ${cleanDays} day(s)`);
+    }
+
+    function markRelapse(){
+      if(!confirm('Are you sure you want to record a relapse? This will increment your relapse count and reset streak.')) return;
+      let relapses = read(STORAGE_KEYS.relapses,0) + 1;
+      write(STORAGE_KEYS.relapses, relapses);
+      write(STORAGE_KEYS.cleanDays, 0);
+      write(STORAGE_KEYS.lastCleanDate, null);
+      render();
+      showTemporaryMessage('Relapse recorded. Be kind to yourself — reset is an opportunity to learn.');
+    }
+
+    function claimBadge(){
+      const cleanDays = read(STORAGE_KEYS.cleanDays,0);
+      const avail = getAvailableBadges(cleanDays);
+      if(avail.length===0){ alert('No badges available to claim yet.'); return; }
+      // claim highest
+      const toClaim = avail[avail.length-1];
+      const claimed = read(STORAGE_KEYS.claimed,[]);
+      claimed.push(toClaim.id);
+      write(STORAGE_KEYS.claimed, claimed);
+      render();
+      alert(`You claimed the ${toClaim.name} badge! Great job.`);
+    }
+
+    function resetData(){
+      if(!confirm('Reset will clear ALL stored progress (visits, streak, relapses, notes, badges). Continue?')) return;
+      Object.values(STORAGE_KEYS).forEach(k=>localStorage.removeItem(k));
+      init();
+      showTemporaryMessage('All data cleared. You can start fresh.');
+    }
+
+    function saveNote(){
+      const txt = $('note').value.trim();
+      if(!txt) return alert('Write a short note first.');
+      const notes = read(STORAGE_KEYS.notes,[]);
+      notes.push({date:new Date().toLocaleString(), text: txt});
+      write(STORAGE_KEYS.notes, notes);
+      $('note').value = '';
+      render();
+    }
+    function clearNotes(){
+      if(!confirm('Clear all saved notes?')) return;
+      write(STORAGE_KEYS.notes, []);
+      render();
+    }
+
+    function showTemporaryMessage(msg){
+      const original = document.title;
+      document.title = msg;
+      setTimeout(()=>document.title = original,2500);
+    }
+
+    function escapeHtml(unsafe) { return unsafe.replace(/&/g, '&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    // boot
+    init();
+  </script>
+</body>
+</html>
